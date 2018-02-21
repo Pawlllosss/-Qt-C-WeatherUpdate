@@ -4,6 +4,7 @@
 #include <QDialog>
 #include <QStringList>
 #include <QStringListModel>
+#include <QVariantList>
 #include "apiconnection.h"
 
 namespace Ui {
@@ -16,7 +17,7 @@ class WeatherApp : public QDialog
 
 public:
     explicit WeatherApp(QWidget *parent = 0);
-    void Test();
+    //void Test();
 
     ~WeatherApp();
 
@@ -28,6 +29,8 @@ private slots:
     void on_lineEdit_api_textChanged(const QString &arg1);
 
     void on_button_connect_clicked();
+
+    void support_weather(QVariantList weather_info);
 
 private:
     void setComboBox();

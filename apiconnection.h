@@ -17,6 +17,7 @@ public:
     void ask_for_weather(const QString & city_name, const QString & country_code, const QString & api_code, const QString & language="en");
 
 signals:
+    void weather_list_ready(QVariantList);
 
 public slots:
     void weather_ready(QNetworkReply *);

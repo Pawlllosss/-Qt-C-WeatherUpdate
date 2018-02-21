@@ -12,6 +12,8 @@ class WeatherApp;
 ApiConnection::ApiConnection(QObject *parent) : QObject(parent)
 {
     manager = new QNetworkAccessManager;
+
+    connect(this, SIGNAL(weather_list_ready(QVariantList)), (WeatherApp*)(parent), SLOT(support_weather(QVariantList)));
 }
 
 void ApiConnection::ask_for_weather(const QString & city_name, const QString & country_code, const QString & api_code, const QString & language)
@@ -63,7 +65,8 @@ void ApiConnection::weather_ready(QNetworkReply * reply)
 
     qDebug() <<weather_list;
 
-    ((WeatherApp*)(parent()))->Test();
+    //((WeatherApp*)(parent()))->Test(); //just curious
 
     //emit signal or just call a function to set in weather app?
+    emit weather_list_ready(weather_list);
 }

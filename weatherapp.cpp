@@ -26,7 +26,7 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
 void WeatherApp::setComboBox()
 {
-    QFile country_list("C:/Users/Faplo/Documents/Programowanie/qt/WeatherUpdate/country_codes.csv");
+    QFile country_list("C:/Users/Pawlllosss/Documents/programowanie/qt/WeatherUpdate/country_codes.csv");
 
     if(!country_list.open(QIODevice::ReadOnly))
     {
@@ -58,17 +58,47 @@ void WeatherApp::setComboBox()
 
 
 }
-
+/*
 void WeatherApp::Test()
 {
     qDebug()<<"test";
 }
-
+*/
 //destructor
 
 WeatherApp::~WeatherApp()
 {
     delete ui;
+}
+
+//SLOTS
+
+void WeatherApp::support_weather(QVariantList weather_info)
+{
+    qDebug()<<"Test";
+
+    QString text_output;
+
+    if( weather_info.size() != 6 )
+        return;
+
+/*
+    for(int i = 0; i < weather_info.size() ; i++)
+    {
+        qDebug()<<weather_info[i];
+        text_output.append(weather_info[i].toString()+"\n");
+    }
+*/
+    text_output.append("Date: " + weather_info[0].toString() + "\n");
+    text_output.append("Hour: " + weather_info[1].toString() + "\n");
+    text_output.append("Temperature: " + QString::number((weather_info[2].toDouble() - 32)*(5.0/9)) + " C\n");
+    text_output.append("Pressure: " + QString::number(weather_info[3].toDouble()) + " hPa\n");
+    text_output.append("Humidity: " + QString::number(weather_info[4].toInt()) + "% \n");
+    text_output.append("Weather description: " + weather_info[5].toString() + "\n");
+
+
+    qDebug()<<text_output;
+    ui->text_weather_info->setText(text_output);
 }
 
 //UI SLOTS
@@ -86,7 +116,7 @@ void WeatherApp::on_button_add_clicked()
     //first click doesnt work!
     int rows = string_list_model_city->rowCount();
     string_list_model_city->insertRow(rows);
-    QModelIndex index = string_list_model_city->index( rows - 1);
+    QModelIndex index = string_list_model_city->index( rows - 1 );
     string_list_model_city->setData( index, QString(ui->lineEdit_city->text()+" - "+ui->comboBox_country->currentText()));
 }
 
