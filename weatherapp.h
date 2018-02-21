@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QStringListModel>
 #include <QVariantList>
+#include <QtSql>
+
 #include "apiconnection.h"
 
 namespace Ui {
@@ -35,11 +37,15 @@ private slots:
 private:
     void setComboBox();
 
+    void setDatabase();
+
     Ui::WeatherApp *ui;
 
     QStringList * string_list_country_codes;
     QStringListModel * string_list_model_country_codes;
     QStringListModel * string_list_model_city;
+
+    QSqlRelationalTableModel * model;
 
     ApiConnection * connection;
 };

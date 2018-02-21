@@ -5,6 +5,7 @@
 #include <QTextStream>
 #include <QDebug>
 #include <QMessageBox>
+#include <QModelIndex>
 
 WeatherApp::WeatherApp(QWidget *parent) :
     QDialog(parent),
@@ -18,10 +19,12 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
     setComboBox();
 
-    string_list_model_city = new QStringListModel;
-    ui->list_city->setModel(string_list_model_city);
+    //string_list_model_city = new QStringListModel;
+   // ui->list_city->setModel(string_list_model_city);
 
     connection = new ApiConnection(this);
+
+    setDatabase();
 }
 
 void WeatherApp::setComboBox()
@@ -64,6 +67,48 @@ void WeatherApp::Test()
     qDebug()<<"test";
 }
 */
+
+//set database
+void WeatherApp::setDatabase()
+{
+    //to do - set db in file and check if already exist, if exists then load its content
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName(":memory:");
+
+    if(!db.open())
+    {
+        QMessageBox::warning(this, "Error with creating database", db.lastError().text());
+        return;
+    }
+
+    QSqlQuery q;
+
+    if(!q.exec(QLatin1String("create table cities(id_city integer primary key, name varchar, country varchar)")))
+    {
+        QMessageBox::warning(this, "Error table cities", q.lastError().text());
+        return;
+    }
+
+    if(!q.exec(QLatin1String("create table weather(id_weather integer primary key, date_weather date, hour time, temperature int, pressure int, humidity int, description varchar, city_id int)")))
+    {
+        QMessageBox::warning(this, "Error table weather", q.lastError().text());
+        return;
+    }
+
+    model = new QSqlRelationalTableModel(ui->list_city);
+    model->setTable("weather");
+
+    model->setRelation(model->fieldIndex("city_id"), QSqlRelation("cities", "id_city", "name, country"));
+
+    //important!
+    model->select();
+
+    model->setTable("cities");
+
+    ui->list_city->setModel(model);
+}
+
 //destructor
 
 WeatherApp::~WeatherApp()
@@ -113,11 +158,48 @@ void WeatherApp::on_lineEdit_city_textChanged(const QString &arg1)
 
 void WeatherApp::on_button_add_clicked()
 {
+
+    //TO DO: PREVENT ADDING IDENTICAL CITIES
+    //CHANGE HEADERS
+    static int id = 0;
+
     //first click doesnt work!
+    /*
     int rows = string_list_model_city->rowCount();
     string_list_model_city->insertRow(rows);
     QModelIndex index = string_list_model_city->index( rows - 1 );
     string_list_model_city->setData( index, QString(ui->lineEdit_city->text()+" - "+ui->comboBox_country->currentText()));
+    */
+    int rows = model->rowCount();
+
+    qDebug()<<rows;
+
+    model->insertRow(rows);
+
+/*
+    QSqlRecord rec = model->record();
+
+    rec.setValue("name", ui->lineEdit_city->text() );
+    rec.setValue("country", ui->comboBox_country->currentText() );
+
+    qDebug()<<rec;
+
+    qDebug()<<model->setRecord( rows , rec);
+*/
+
+    model->setData(model->index(rows, 0), id);
+    model->setData(model->index(rows, 1), ui->lineEdit_city->text());
+    model->setData(model->index(rows, 2), ui->comboBox_country->currentText());
+
+    model->submitAll();
+
+    id++;
+ /*   model->insertRecord(model->rowCount() - 1, rec);
+[
+    model->submitAll();
+
+    model->database().commit();*/
+
 }
 
 void WeatherApp::on_lineEdit_api_textChanged(const QString &arg1)
