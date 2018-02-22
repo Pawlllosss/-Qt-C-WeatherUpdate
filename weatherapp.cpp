@@ -17,6 +17,10 @@ WeatherApp::WeatherApp(QWidget *parent) :
     ui->button_connect->setDisabled(true);//wait until there is api code in valid format given and city selected
     ui->button_history->setDisabled(true);//as previous one (first SQL database is needed to implement)
 
+    ui->list_city->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->list_city->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->list_city->verticalHeader()->hide();
+
     setComboBox();
 
     //string_list_model_city = new QStringListModel;
@@ -90,7 +94,7 @@ void WeatherApp::setDatabase()
         return;
     }
 
-    if(!q.exec(QLatin1String("create table weather(id_weather integer primary key, date_weather date, hour time, temperature int, pressure int, humidity int, description varchar, city_id int)")))
+    if(!q.exec(QLatin1String("create table weather(id_weather integer primary key, date_weather date, hour time, temperature double, pressure int, humidity int, description varchar, city_id int)")))
     {
         QMessageBox::warning(this, "Error table weather", q.lastError().text());
         return;
@@ -107,6 +111,12 @@ void WeatherApp::setDatabase()
     model->setTable("cities");
 
     ui->list_city->setModel(model);
+
+
+    //weather model
+
+    weather_model = new QSqlRelationalTableModel();
+    weather_model->setTable("weather");
 }
 
 //destructor
@@ -118,13 +128,37 @@ WeatherApp::~WeatherApp()
 
 //SLOTS
 
+void WeatherApp::add_to_weather_db(QVariantList weather_info)
+{
+    static int id = 0;
+
+    int rows = weather_model->rowCount();
+
+    qDebug()<<rows;
+
+    weather_model->insertRow(rows);
+
+    //id_weather integer primary key, date_weather date, hour time, temperature int, pressure int, humidity int, description varchar, city_id int
+
+    weather_model->setData(model->index(rows, 0), id);
+    weather_model->setData(model->index(rows, 1), weather_info[0].toDate());
+    weather_model->setData(model->index(rows, 2), weather_info[1].toDateTime());
+    weather_model->setData(model->index(rows, 3), weather_info[2].toDouble());
+    weather_model->setData(model->index(rows, 4), weather_info[3].toInt());
+    weather_model->setData(model->index(rows, 5), weather_info[4].toInt());
+    weather_model->setData(model->index(rows, 6), weather_info[5].toString());
+    weather_model->setData(model->index(rows, 7), weather_info[6].toInt());
+
+    weather_model->submitAll();
+}
+
 void WeatherApp::support_weather(QVariantList weather_info)
 {
     qDebug()<<"Test";
 
     QString text_output;
 
-    if( weather_info.size() != 6 )
+    if( weather_info.size() != 7 )
         return;
 
 /*
@@ -212,7 +246,7 @@ void WeatherApp::on_lineEdit_api_textChanged(const QString &arg1)
 
 void WeatherApp::on_button_connect_clicked()
 {
-    QModelIndex index = ui->list_city->currentIndex();
+   /* QModelIndex index = ui->list_city->currentIndex();
 
     if(!index.isValid())
             return;
@@ -220,5 +254,43 @@ void WeatherApp::on_button_connect_clicked()
     QStringList city_and_country = index.data().toString().split(" - ");
 
     connection->ask_for_weather(city_and_country[0].simplified(), city_and_country[1].simplified(), ui->lineEdit_api->text());
+    */
+    QItemSelectionModel *selection = ui->list_city->selectionModel();
 
+
+    //it doesn's work (I  want to with whether item was selected
+    if( !selection )
+    {
+        qDebug() << "Didn't select a row";
+        return;
+    }
+
+    //it should remember id_city!!!!
+
+    int select_id = selection->selectedRows(0).value(0).data().toInt();
+    QString select_name = selection->selectedRows(1).value(0).data().toString();
+    QString select_country = selection->selectedRows(2).value(0).data().toString();
+
+    connection->ask_for_weather(select_id, select_name, select_country, ui->lineEdit_api->text());
+
+}
+
+void WeatherApp::on_button_history_clicked()
+{
+    QItemSelectionModel *selection = ui->list_city->selectionModel();
+
+    //TO DO: implement valid selection
+
+    int select_id = selection->selectedRows(0).value(0).data().toInt();
+
+    weather_model->setFilter("city_id = "+QString::number(select_id));
+
+    //sorting first by hour (col 3) and then by date (col 2) (?)
+
+    weather_model->select();
+
+    for(int i = 0 ; i < weather_model->rowCount() ; i++)
+    {
+
+    }
 }

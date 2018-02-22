@@ -14,7 +14,7 @@ class ApiConnection : public QObject
     Q_OBJECT
 public:
     explicit ApiConnection(QObject *parent = nullptr);
-    void ask_for_weather(const QString & city_name, const QString & country_code, const QString & api_code, const QString & language="en");
+    void ask_for_weather(const int city_id, const QString & city_name, const QString & country_code, const QString & api_code, const QString & language="en");
 
 signals:
     void weather_list_ready(QVariantList);
@@ -23,6 +23,7 @@ public slots:
     void weather_ready(QNetworkReply *);
 private:
     QNetworkAccessManager * manager;
+    int current_city_id;
     //QNetworkReply * weather_reply;
 };
 

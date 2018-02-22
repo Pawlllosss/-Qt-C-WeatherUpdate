@@ -14,10 +14,15 @@ ApiConnection::ApiConnection(QObject *parent) : QObject(parent)
     manager = new QNetworkAccessManager;
 
     connect(this, SIGNAL(weather_list_ready(QVariantList)), (WeatherApp*)(parent), SLOT(support_weather(QVariantList)));
+    connect(this, SIGNAL(weather_list_ready(QVariantList)), (WeatherApp*)(parent), SLOT(add_to_weather_db(QVariantList)));
 }
 
-void ApiConnection::ask_for_weather(const QString & city_name, const QString & country_code, const QString & api_code, const QString & language)
+void ApiConnection::ask_for_weather(const int city_id, const QString & city_name, const QString & country_code, const QString & api_code, const QString & language)
 {
+    //add option to rember city_id value, for database purposes
+
+    current_city_id = city_id;
+
     QNetworkRequest request(QUrl("http://api.openweathermap.org/data/2.5/weather?q="+city_name+","+country_code+"&APPID="+api_code+"&lang="+language));
     manager->get(request);
 
@@ -61,7 +66,7 @@ void ApiConnection::weather_ready(QNetworkReply * reply)
    QVariantList weather_list;
 
     weather_list << QDate::currentDate() << QTime::currentTime() << main_obj.value("temp").toDouble() << main_obj.value("pressure").toDouble()
-                 << main_obj.value("humidity").toInt() << weather_description.value("description").toString();
+                 << main_obj.value("humidity").toInt() << weather_description.value("description").toString() << current_city_id;
 
     qDebug() <<weather_list;
 
