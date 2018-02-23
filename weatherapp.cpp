@@ -7,6 +7,12 @@
 #include <QMessageBox>
 #include <QModelIndex>
 
+
+//TO DO: change list_cities for more proper name, it was list type previously now it's table view
+//remember setting
+//db to file
+//convert temp properly!
+
 WeatherApp::WeatherApp(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::WeatherApp)
@@ -15,16 +21,12 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
     ui->button_add->setDisabled(true);//until there is some city name and country code given
     ui->button_connect->setDisabled(true);//wait until there is api code in valid format given and city selected
-    //ui->button_history->setDisabled(true);//as previous one (first SQL database is needed to implement)
 
     ui->list_city->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->list_city->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->list_city->verticalHeader()->hide();
 
     setComboBox();
-
-    //string_list_model_city = new QStringListModel;
-   // ui->list_city->setModel(string_list_model_city);
 
     connection = new ApiConnection(this);
 
@@ -33,6 +35,7 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
 void WeatherApp::setComboBox()
 {
+    //TO do: in the executable folder, check if available (and download if not?) also possible QFileDialog at start of app
     QFile country_list("C:/Users/Pawlllosss/Documents/programowanie/qt/WeatherUpdate/country_codes.csv");
 
     if(!country_list.open(QIODevice::ReadOnly))
@@ -57,20 +60,13 @@ void WeatherApp::setComboBox()
             string_list_country_codes->append(line.split(",")[1]);
     }
 
-    //TO DO - sort this list
+    std::sort( string_list_country_codes->begin(), string_list_country_codes->end() );
 
     string_list_model_country_codes = new QStringListModel(*string_list_country_codes);
 
     ui->comboBox_country->setModel(string_list_model_country_codes);
 
-
 }
-/*
-void WeatherApp::Test()
-{
-    qDebug()<<"test";
-}
-*/
 
 //set database
 void WeatherApp::setDatabase()
@@ -144,7 +140,7 @@ void WeatherApp::add_to_weather_db(QVariantList weather_info)
 
     weather_model->insertRow(rows);
 
-    //id_weather integer primary key, date_weather date, hour time, temperature int, pressure int, humidity int, description varchar, city_id int
+    //id_weather integer primary key, date_weather date, hour time, temperature double, pressure int, humidity int, description varchar, city_id int
 
     qDebug()<<weather_info[0].toDate();
     qDebug()<<weather_info[1].toTime();
@@ -210,31 +206,15 @@ void WeatherApp::on_button_add_clicked()
 
     //TO DO: PREVENT ADDING IDENTICAL CITIES
     //CHANGE HEADERS
+    //
     static int id = 0;
 
-    //first click doesnt work!
-    /*
-    int rows = string_list_model_city->rowCount();
-    string_list_model_city->insertRow(rows);
-    QModelIndex index = string_list_model_city->index( rows - 1 );
-    string_list_model_city->setData( index, QString(ui->lineEdit_city->text()+" - "+ui->comboBox_country->currentText()));
-    */
     int rows = model->rowCount();
 
     qDebug()<<rows;
 
     model->insertRow(rows);
 
-/*
-    QSqlRecord rec = model->record();
-
-    rec.setValue("name", ui->lineEdit_city->text() );
-    rec.setValue("country", ui->comboBox_country->currentText() );
-
-    qDebug()<<rec;
-
-    qDebug()<<model->setRecord( rows , rec);
-*/
 
     model->setData(model->index(rows, 0), id);
     model->setData(model->index(rows, 1), ui->lineEdit_city->text());
@@ -243,11 +223,6 @@ void WeatherApp::on_button_add_clicked()
     model->submitAll();
 
     id++;
- /*   model->insertRecord(model->rowCount() - 1, rec);
-[
-    model->submitAll();
-
-    model->database().commit();*/
 
 }
 
@@ -261,27 +236,18 @@ void WeatherApp::on_lineEdit_api_textChanged(const QString &arg1)
 
 void WeatherApp::on_button_connect_clicked()
 {
-   /* QModelIndex index = ui->list_city->currentIndex();
-
-    if(!index.isValid())
-            return;
-
-    QStringList city_and_country = index.data().toString().split(" - ");
-
-    connection->ask_for_weather(city_and_country[0].simplified(), city_and_country[1].simplified(), ui->lineEdit_api->text());
-    */
     QItemSelectionModel *selection = ui->list_city->selectionModel();
 
 
     //it doesn's work (I  want to with whether item was selected
+    //check index count instead!
     if( !selection )
     {
         qDebug() << "Didn't select a row";
         return;
     }
 
-    //it should remember id_city!!!!
-
+    //it have to remember id_city
     int select_id = selection->selectedRows(0).value(0).data().toInt();
     QString select_name = selection->selectedRows(1).value(0).data().toString();
     QString select_country = selection->selectedRows(2).value(0).data().toString();
@@ -295,14 +261,17 @@ void WeatherApp::on_button_history_clicked()
     QItemSelectionModel *selection = ui->list_city->selectionModel();
 
     //TO DO: implement valid selection
+    //solution as in previous one
 
     int select_id = selection->selectedRows(0).value(0).data().toInt();
     QString city_name = selection->selectedRows(1).value(0).data().toString();
     QString country_code = selection->selectedRows(2).value(0).data().toString();
 
     weather_model->setFilter("city_id = "+QString::number(select_id));
-
     //sorting first by hour (col 3) and then by date (col 2) (?)
+    weather_model->setSort(3, Qt::DescendingOrder);
+    weather_model->setSort(2, Qt::DescendingOrder);
+
 
     weather_model->select();
 
@@ -312,13 +281,6 @@ void WeatherApp::on_button_history_clicked()
 
     for(int i = 0 ; i < weather_model->rowCount() ; i++)
     {
-        //id_weather integer primary key, date_weather date, hour time, temperature double, pressure int, humidity int, description varchar, city_id int
-        /*text_output.append("Date: " + weather_model->record(i).value("date_weather").toDate() + "\n");
-        text_output.append("Hour: " + weather_model->record(i).value("hour").toDateTime() + "\n");
-        text_output.append("Temperature: " + weather_model->record(i).value("temperature").toDouble() " C\n");
-        text_output.append("Pressure: " + weather_model->record(i).value("pressure").toInt() + " hPa\n");
-        text_output.append("Humidity: " + weather_model->record(i).value("humidity").toInt() + "% \n");
-        text_output.append("Weather description: " + weather_model->record(i).value("description").toString()  + "\n");*/
         text_output.append("Date: " + weather_model->record(i).value("date_weather").toString()  + "\n");
         text_output.append("Hour: " + weather_model->record(i).value("hour").toString() + "\n");
         text_output.append("Temperature: " + weather_model->record(i).value("temperature").toString() + " C\n");
@@ -329,4 +291,16 @@ void WeatherApp::on_button_history_clicked()
 
     qDebug()<<text_output;
     ui->text_weather_info->setText(text_output);
+}
+
+void WeatherApp::on_button_delete_clicked()
+{
+    //need to fix blank fields
+    QModelIndexList index = ui->list_city->selectionModel()->selectedRows();
+
+    if( index.count() != 1)
+        return;
+
+    model->removeRow( index.at(0).row());
+    model->submitAll();
 }

@@ -24,7 +24,6 @@ public slots:
 private:
     QNetworkAccessManager * manager;
     int current_city_id;
-    //QNetworkReply * weather_reply;
 };
 
 #endif // APICONNECTION_H

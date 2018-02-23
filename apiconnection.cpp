@@ -21,7 +21,7 @@ ApiConnection::ApiConnection(QObject *parent) : QObject(parent)
 
 void ApiConnection::ask_for_weather(const int city_id, const QString & city_name, const QString & country_code, const QString & api_code, const QString & language)
 {
-    //add option to rember city_id value, for database purposes
+    //rember city_id value, for database purposes
 
     current_city_id = city_id;
 
@@ -44,22 +44,6 @@ void ApiConnection::weather_ready(QNetworkReply * reply)
 
     QJsonObject main_obj = weather_obj.value("main").toObject();//access to object main nested in json
 
-    //getting into array weather nested in json, and parsing the description field
-
-    /*QJsonArray weather_array = weather_obj.value("weather").toArray();
-
-    QJsonValue weather_description;
-
-    foreach( const QJsonValue & value, weather_array)
-    {
-        QJsonObject obj = value.toObject();
-        if(obj.contains("description"))
-        {
-            weather_description = obj.value("description").toString();
-            break;
-        }
-
-    }*/
 
     //date-hour-temperature-pressure-humidity-weather_description
 
@@ -72,8 +56,6 @@ void ApiConnection::weather_ready(QNetworkReply * reply)
 
     qDebug() <<weather_list;
 
-    //((WeatherApp*)(parent()))->Test(); //just curious
 
-    //emit signal or just call a function to set in weather app?
     emit weather_list_ready(weather_list);
 }

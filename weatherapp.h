@@ -40,6 +40,8 @@ private slots:
 
     void on_button_history_clicked();
 
+    void on_button_delete_clicked();
+
 private:
     void setComboBox();
 
