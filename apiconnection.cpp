@@ -15,6 +15,8 @@ ApiConnection::ApiConnection(QObject *parent) : QObject(parent)
 
     connect(this, SIGNAL(weather_list_ready(QVariantList)), (WeatherApp*)(parent), SLOT(support_weather(QVariantList)));
     connect(this, SIGNAL(weather_list_ready(QVariantList)), (WeatherApp*)(parent), SLOT(add_to_weather_db(QVariantList)));
+
+    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(weather_ready(QNetworkReply*)));
 }
 
 void ApiConnection::ask_for_weather(const int city_id, const QString & city_name, const QString & country_code, const QString & api_code, const QString & language)
@@ -26,8 +28,6 @@ void ApiConnection::ask_for_weather(const int city_id, const QString & city_name
     QNetworkRequest request(QUrl("http://api.openweathermap.org/data/2.5/weather?q="+city_name+","+country_code+"&APPID="+api_code+"&lang="+language));
     manager->get(request);
 
-    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(weather_ready(QNetworkReply*)));
-
     qDebug()<<"http://api.openweathermap.org/data/2.5/weather?q="+city_name+","+country_code+"&APPID="+api_code+"&lang="+language;
     qDebug()<<"End of ask_for_weather";
 }
@@ -38,6 +38,8 @@ void ApiConnection::weather_ready(QNetworkReply * reply)
 
     QJsonDocument weather_doc = QJsonDocument::fromJson(weather_info.toUtf8());
     QJsonObject weather_obj = weather_doc.object();
+
+    qDebug()<<weather_obj;
 
 
     QJsonObject main_obj = weather_obj.value("main").toObject();//access to object main nested in json

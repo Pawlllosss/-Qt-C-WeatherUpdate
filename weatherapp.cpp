@@ -15,7 +15,7 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
     ui->button_add->setDisabled(true);//until there is some city name and country code given
     ui->button_connect->setDisabled(true);//wait until there is api code in valid format given and city selected
-    ui->button_history->setDisabled(true);//as previous one (first SQL database is needed to implement)
+    //ui->button_history->setDisabled(true);//as previous one (first SQL database is needed to implement)
 
     ui->list_city->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->list_city->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -115,8 +115,11 @@ void WeatherApp::setDatabase()
 
     //weather model
 
-    weather_model = new QSqlRelationalTableModel();
+
+    //table_sql_test - self explanatiory - for test - delete it later
+    weather_model = new QSqlRelationalTableModel(ui->table_sql_test);
     weather_model->setTable("weather");
+    ui->table_sql_test->setModel(weather_model);
 }
 
 //destructor
@@ -130,26 +133,38 @@ WeatherApp::~WeatherApp()
 
 void WeatherApp::add_to_weather_db(QVariantList weather_info)
 {
+    qDebug()<<"Weather model start: ===================";
+
     static int id = 0;
 
     int rows = weather_model->rowCount();
 
     qDebug()<<rows;
+    qDebug()<<weather_info;
 
     weather_model->insertRow(rows);
 
     //id_weather integer primary key, date_weather date, hour time, temperature int, pressure int, humidity int, description varchar, city_id int
 
-    weather_model->setData(model->index(rows, 0), id);
-    weather_model->setData(model->index(rows, 1), weather_info[0].toDate());
-    weather_model->setData(model->index(rows, 2), weather_info[1].toDateTime());
-    weather_model->setData(model->index(rows, 3), weather_info[2].toDouble());
-    weather_model->setData(model->index(rows, 4), weather_info[3].toInt());
-    weather_model->setData(model->index(rows, 5), weather_info[4].toInt());
-    weather_model->setData(model->index(rows, 6), weather_info[5].toString());
-    weather_model->setData(model->index(rows, 7), weather_info[6].toInt());
+    qDebug()<<weather_info[0].toDate();
+    qDebug()<<weather_info[1].toTime();
+    qDebug()<<weather_info[2].toDouble();
+    qDebug()<< weather_info[3].toInt();
+
+    weather_model->setData(weather_model->index(rows, 0), id);
+    weather_model->setData(weather_model->index(rows, 1), weather_info[0].toDate());
+    weather_model->setData(weather_model->index(rows, 2), weather_info[1].toTime());
+    weather_model->setData(weather_model->index(rows, 3), weather_info[2].toDouble());
+    weather_model->setData(weather_model->index(rows, 4), weather_info[3].toInt());
+    weather_model->setData(weather_model->index(rows, 5), weather_info[4].toInt());
+    weather_model->setData(weather_model->index(rows, 6), weather_info[5].toString());
+    weather_model->setData(weather_model->index(rows, 7), weather_info[6].toInt());
 
     weather_model->submitAll();
+
+    id++;
+
+    qDebug()<<"Weather model end: ===================";
 }
 
 void WeatherApp::support_weather(QVariantList weather_info)
@@ -282,6 +297,8 @@ void WeatherApp::on_button_history_clicked()
     //TO DO: implement valid selection
 
     int select_id = selection->selectedRows(0).value(0).data().toInt();
+    QString city_name = selection->selectedRows(1).value(0).data().toString();
+    QString country_code = selection->selectedRows(2).value(0).data().toString();
 
     weather_model->setFilter("city_id = "+QString::number(select_id));
 
@@ -289,8 +306,27 @@ void WeatherApp::on_button_history_clicked()
 
     weather_model->select();
 
+    QString text_output;
+
+    text_output.append(city_name + " = " + country_code +"\n=============\n");
+
     for(int i = 0 ; i < weather_model->rowCount() ; i++)
     {
-
+        //id_weather integer primary key, date_weather date, hour time, temperature double, pressure int, humidity int, description varchar, city_id int
+        /*text_output.append("Date: " + weather_model->record(i).value("date_weather").toDate() + "\n");
+        text_output.append("Hour: " + weather_model->record(i).value("hour").toDateTime() + "\n");
+        text_output.append("Temperature: " + weather_model->record(i).value("temperature").toDouble() " C\n");
+        text_output.append("Pressure: " + weather_model->record(i).value("pressure").toInt() + " hPa\n");
+        text_output.append("Humidity: " + weather_model->record(i).value("humidity").toInt() + "% \n");
+        text_output.append("Weather description: " + weather_model->record(i).value("description").toString()  + "\n");*/
+        text_output.append("Date: " + weather_model->record(i).value("date_weather").toString()  + "\n");
+        text_output.append("Hour: " + weather_model->record(i).value("hour").toString() + "\n");
+        text_output.append("Temperature: " + weather_model->record(i).value("temperature").toString() + " C\n");
+        text_output.append("Pressure: " + weather_model->record(i).value("pressure").toString() + " hPa\n");
+        text_output.append("Humidity: " + weather_model->record(i).value("humidity").toString() + "% \n");
+        text_output.append("Weather description: " + weather_model->record(i).value("description").toString()  + "\n\n");
     }
+
+    qDebug()<<text_output;
+    ui->text_weather_info->setText(text_output);
 }

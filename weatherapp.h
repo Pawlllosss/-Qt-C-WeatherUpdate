@@ -38,6 +38,8 @@ private slots:
 
     void support_weather(QVariantList weather_info);
 
+    void on_button_history_clicked();
+
 private:
     void setComboBox();
 
