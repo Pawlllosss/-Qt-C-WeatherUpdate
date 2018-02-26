@@ -9,9 +9,6 @@
 
 
 //TO DO: change list_cities for more proper name, it was list type previously now it's table view
-//remember setting
-//db to file
-//convert temp properly!
 
 WeatherApp::WeatherApp(QWidget *parent) :
     QDialog(parent),
@@ -269,13 +266,6 @@ void WeatherApp::support_weather(QVariantList weather_info)
     if( weather_info.size() != 7 )
         return;
 
-/*
-    for(int i = 0; i < weather_info.size() ; i++)
-    {
-        qDebug()<<weather_info[i];
-        text_output.append(weather_info[i].toString()+"\n");
-    }
-*/
     text_output.append("Date: " + weather_info[0].toString() + "\n");
     text_output.append("Hour: " + weather_info[1].toString() + "\n");
     text_output.append("Temperature: " + QString::number((weather_info[2].toDouble() - 273)) + " C\n"); //converting kelvin's to celcius ( we are not physics - luckily )
@@ -335,11 +325,9 @@ void WeatherApp::on_button_connect_clicked()
     QItemSelectionModel *selection = ui->list_city->selectionModel();
 
 
-    //it doesn's work (I  want to with whether item was selected
-    //check index count instead!
-    if( !selection )
+    if( selection->selectedRows().count() != 1)
     {
-        qDebug() << "Didn't select a row";
+        qDebug()<<"NO VALID SELECTION";
         return;
     }
 
@@ -357,10 +345,10 @@ void WeatherApp::on_button_history_clicked()
     QItemSelectionModel *selection = ui->list_city->selectionModel();
 
     if( selection->selectedRows().count() != 1)
+    {
+        qDebug()<<"NO VALID SELECTION";
         return;
-
-    //TO DO: implement valid selection
-    //solution as in previous one
+    }
 
     int select_id = selection->selectedRows(0).value(0).data().toInt();
     QString city_name = selection->selectedRows(1).value(0).data().toString();
@@ -382,7 +370,7 @@ void WeatherApp::on_button_history_clicked()
     {
         text_output.append("Date: " + weather_model->record(i).value("date_weather").toString()  + "\n");
         text_output.append("Hour: " + weather_model->record(i).value("hour").toString() + "\n");
-        text_output.append("Temperature: " + weather_model->record(i).value("temperature").toString() + " C\n");
+        text_output.append("Temperature: " + QString::number(weather_model->record(i).value("temperature").toDouble()) + " C\n");
         text_output.append("Pressure: " + weather_model->record(i).value("pressure").toString() + " hPa\n");
         text_output.append("Humidity: " + weather_model->record(i).value("humidity").toString() + "% \n");
         text_output.append("Weather description: " + weather_model->record(i).value("description").toString()  + "\n\n");

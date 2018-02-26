@@ -23,7 +23,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -92,6 +92,9 @@
     </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QColumnView" name="columnView"/>
+      </item>
       <item>
        <widget class="QTextEdit" name="text_weather_info">
         <property name="enabled">

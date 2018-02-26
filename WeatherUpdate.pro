@@ -26,11 +26,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         weatherapp.cpp \
-    apiconnection.cpp
+    apiconnection.cpp \
 
 HEADERS += \
         weatherapp.h \
-    apiconnection.h
+    apiconnection.h \
 
 FORMS += \
-        weatherapp.ui
+        weatherapp.ui \
