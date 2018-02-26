@@ -57,6 +57,9 @@ private:
     QSqlRelationalTableModel * weather_model;
 
     ApiConnection * connection;
+
+    int current_id_city;
+    int current_id_weather;
 };
 
 #endif // WEATHERAPP_H
