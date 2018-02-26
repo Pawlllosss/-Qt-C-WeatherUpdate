@@ -2,17 +2,16 @@
 #include "ui_weatherapp.h"
 
 #include <QFile>
+#include <QFileDialog>
 #include <QTextStream>
 #include <QDebug>
 #include <QMessageBox>
 #include <QModelIndex>
 
 
-//TO DO: change list_cities for more proper name, it was list type previously now it's table view
-
 WeatherApp::WeatherApp(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::WeatherApp), current_id_city(0), current_id_weather(0)
+    ui(new Ui::WeatherApp), country_codes_file_path(QDir::currentPath() + "/country_codes.csv"), last_used_country_code(""), current_id_city(0), current_id_weather(0)
 {
     ui->setupUi(this);
 
@@ -22,11 +21,6 @@ WeatherApp::WeatherApp(QWidget *parent) :
     ui->list_city->setSelectionMode(QAbstractItemView::SingleSelection);
     ui->list_city->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->list_city->verticalHeader()->hide();
-
-    //set countrynames to combobox
-    setComboBox();
-
-    connection = new ApiConnection(this);
 
     //load last setting if save.json file exists
     QFile settings("save.json");
@@ -40,19 +34,22 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
         QJsonObject settings_object = QJsonDocument::fromJson(loaded_settings).object();
 
+        //set country codes file path
+        country_codes_file_path = settings_object["country_codes_file_name"].toString();
+
         //set last used api key
         ui->lineEdit_api->setText(settings_object["api"].toString());
 
         //set last used country code to combo box
-        int index = ui->comboBox_country->findText(settings_object["selected_country"].toString());
+        last_used_country_code = settings_object["selected_country"].toString();
 
-        qDebug()<<settings_object["selected_country"].toString();
-        qDebug()<<index<<"It was looking for index";
-
-        if(index != -1)
-            ui->comboBox_country->setCurrentIndex(index);
         qDebug()<<settings_object["api"]<<settings_object["selected_country"];
     }
+
+    //set countrynames to combobox
+    setComboBox();
+
+    connection = new ApiConnection(this);
 
     //set database tables
     setDatabase();
@@ -60,8 +57,14 @@ WeatherApp::WeatherApp(QWidget *parent) :
 
 void WeatherApp::setComboBox()
 {
-    //TO do: in the executable folder, check if available (and download if not?) also possible QFileDialog at start of app
-    QFile country_list("C:/Users/Pawlllosss/Documents/programowanie/qt/WeatherUpdate/country_codes.csv");
+    QFile country_list(country_codes_file_path);
+
+    if(!country_list.exists())
+    {
+        country_codes_file_path = QFileDialog::getOpenFileName(this, "Country codes csv file", QDir::currentPath()
+                                                               , "csv file (*.csv)");
+        country_list.setFileName(country_codes_file_path);
+    }
 
     if(!country_list.open(QIODevice::ReadOnly))
     {
@@ -91,6 +94,14 @@ void WeatherApp::setComboBox()
 
     ui->comboBox_country->setModel(string_list_model_country_codes);
 
+    //set a country code if it has been loaded from setting json file
+    if( last_used_country_code != "" )
+    {
+        int index = ui->comboBox_country->findText(last_used_country_code);
+
+        if(index != -1)
+            ui->comboBox_country->setCurrentIndex(index);
+    }
 }
 
 //set database
@@ -102,7 +113,6 @@ void WeatherApp::setDatabase()
     //to do - set db in file and check if already exist, if exists then load its content
 
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
-    //db.setDatabaseName(":memory:");
     qDebug()<<QDir::currentPath();
     db.setDatabaseName(QDir::currentPath() + "/weather.db.sqlite");
 
@@ -139,7 +149,7 @@ void WeatherApp::setDatabase()
         qDebug()<<"select";
     }
 
-    if(!(existing_tables.contains("weather")))//I want to load db from file and if already existing don't create new table
+    if(!(existing_tables.contains("weather")))//I want to load db from file and if it already exists don't create new table
     {
         if(!q.exec(QLatin1String("create table weather(id_weather integer primary key, date_weather date, hour time, temperature double, pressure int, humidity int, description varchar, city_id int)")))
         {
@@ -161,16 +171,16 @@ void WeatherApp::setDatabase()
 
     model = new QSqlRelationalTableModel(ui->list_city);
 
-    //I think it's not needed right now
-   // model->setTable("weather");
-
-    //model->setRelation(model->fieldIndex("city_id"), QSqlRelation("cities", "id_city", "name, country"));
-
 
     model->setTable("cities");
     model->setSort(0, Qt::AscendingOrder);//it might be useful to sort cities by id_city;
 
+    model->setHeaderData(1, Qt::Horizontal, "City name");
+    model->setHeaderData(2, Qt::Horizontal, "Country" );
+
     ui->list_city->setModel(model);
+
+    ui->list_city->setColumnHidden( 0 , true); //hide id field
 
     model->select();//important!
 
@@ -184,10 +194,8 @@ void WeatherApp::setDatabase()
     //weather model
 
 
-    //table_sql_test - self explanatiory - for test - delete it later
-    weather_model = new QSqlRelationalTableModel(ui->table_sql_test);
+    weather_model = new QSqlRelationalTableModel();
     weather_model->setTable("weather");
-    ui->table_sql_test->setModel(weather_model);
 
     weather_model->select();//it's very, very important!
 
@@ -196,6 +204,18 @@ void WeatherApp::setDatabase()
         qDebug()<<"loaded_weather";
         current_id_weather = weather_model->record(weather_model->rowCount() - 1).value("id_weather").toInt();
     }
+}
+
+void WeatherApp::removeWeather(int city_id_rm)
+{
+    for (int i = 0; i < weather_model->rowCount(); i++) {
+        int city_id = weather_model->record(i).value("city_id").toInt();
+
+        if( city_id == city_id_rm)
+            weather_model->removeRow(i);
+    }
+
+    weather_model->select();
 }
 
 //destructor
@@ -210,6 +230,7 @@ WeatherApp::~WeatherApp()
 
     QJsonObject save_object;
 
+    save_object["country_codes_file_name"] = country_codes_file_path;
     save_object["api"] = ui->lineEdit_api->text();
     save_object["selected_country"] = ui->comboBox_country->currentText();
 
@@ -291,9 +312,25 @@ void WeatherApp::on_lineEdit_city_textChanged(const QString &arg1)
 void WeatherApp::on_button_add_clicked()
 {
 
-    //TO DO: PREVENT ADDING IDENTICAL CITIES
+    //TO DO:
     //CHANGE HEADERS
-    //
+
+    //check duplicate
+    QString city_name = ui->lineEdit_city->text();
+    QString country_code = ui->comboBox_country->currentText();
+
+    for (int i = 0; i < model->rowCount(); i++) {
+        QString name_record = model->record(i).value(1).toString();
+        QString country_record = model->record(i).value(2).toString();
+
+        if(( city_name == name_record ) && ( country_code == country_record ))
+        {
+            QMessageBox::warning(this, "Duplicate city!", "This city already exist in database!");
+            return;
+        }
+    }
+
+    //add city
 
     current_id_city++;
 
@@ -305,8 +342,8 @@ void WeatherApp::on_button_add_clicked()
 
 
     model->setData(model->index(rows, 0), current_id_city);
-    model->setData(model->index(rows, 1), ui->lineEdit_city->text());
-    model->setData(model->index(rows, 2), ui->comboBox_country->currentText());
+    model->setData(model->index(rows, 1), city_name);
+    model->setData(model->index(rows, 2), country_code);
 
     model->submitAll();
 
@@ -382,11 +419,14 @@ void WeatherApp::on_button_history_clicked()
 
 void WeatherApp::on_button_delete_clicked()
 {
-    //to do: deleting cities, deletes records from weather table
-    QModelIndexList index = ui->list_city->selectionModel()->selectedRows();
+    QItemSelectionModel *selection = ui->list_city->selectionModel();
+    QModelIndexList index = selection->selectedRows();
 
     if( index.count() != 1)
         return;
+
+    removeWeather( selection->selectedRows(0).value(0).data().toInt() ); //it removes related records in the weather table
+
 
     model->removeRow( index.at(0).row());
     model->submitAll();

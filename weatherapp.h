@@ -47,7 +47,12 @@ private:
 
     void setDatabase();
 
+    void removeWeather(int city_id_rm);
+
     Ui::WeatherApp *ui;
+
+    QString country_codes_file_path;
+    QString last_used_country_code;
 
     QStringList * string_list_country_codes;
     QStringListModel * string_list_model_country_codes;
@@ -57,6 +62,7 @@ private:
     QSqlRelationalTableModel * weather_model;
 
     ApiConnection * connection;
+
 
     int current_id_city;
     int current_id_weather;

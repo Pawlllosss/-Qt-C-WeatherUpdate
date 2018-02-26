@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QDate>
 #include <QTime>
+#include <QMessageBox>
 
 class WeatherApp;
 
@@ -43,6 +44,13 @@ void ApiConnection::weather_ready(QNetworkReply * reply)
 
 
     QJsonObject main_obj = weather_obj.value("main").toObject();//access to object main nested in json
+
+
+    if(weather_obj.value("cod").toInt() != 200 )
+    {
+        QMessageBox::warning((WeatherApp*)parent(), "Connection error", "Html response different than 200(OK)");
+        return;
+    }
 
 
     //date-hour-temperature-pressure-humidity-weather_description
