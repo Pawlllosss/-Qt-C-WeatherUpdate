@@ -1,6 +1,6 @@
 # Weather Update (C++/Qt)
 
-A simple C++ project using Qt library, which downloades a weather through the free API provided by www.openweathermap.org. Then saves it to the SQL database.
+A simple C++ project using Qt library, which downloads a weather through the free API provided by www.openweathermap.org. Then saves it to the SQL database.
 
 ## Getting Started
 
